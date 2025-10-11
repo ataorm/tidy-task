@@ -1,2 +1,3 @@
 # cs361_main
-CS361 Main Program
+Project: CS361 Project Main Program <br>
+Author: Arianne Taormina
