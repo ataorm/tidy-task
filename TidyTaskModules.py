@@ -8,11 +8,13 @@
 
 
 # TODO: Add functionality to recover task from completed.pkl
+#   Update: add status to regular object incomplete/complete
+#   Update: 2nd list should be for DELETE + recovery from delete
 # TODO: Add delete functionality (does not get added to completed.pkl)
 # TODO: Choice: (main) use default file, start new, or enter own file name
 
 
-import pickle, time
+import pickle, time, textwrap
 
 
 def print_welcome():
@@ -137,7 +139,8 @@ def add_task(task_list):
           "\t( Tip! ) Only TITLE is required. Other fields may be left blank.\n"
           "\t( Tip! ) Editing: Tasks can be EDITED later!\n"
           "\t( Tip! ) Quick Add: Enter 'Q' on this screen to QUICK-ADD a task.\n"
-          "\t                    Recommended for advanced users only.\n")
+          "\t                    Recommended for advanced users only.\n"
+          "\t( Tip! ) Go Back: Enter 'B' to go BACK to your task list without saving.\n")
 
     # Get task name OR 'Q' for quick-add from user
     task_name = input("\n\tEnter a task name: ")
@@ -146,22 +149,33 @@ def add_task(task_list):
         clear_screen()
         add_task_quick(task_list)
         return
+    # If user enters 'B', go back to view list
+    if task_name.upper() == 'B':
+        return
     # Validation for required task_name input
     while task_name == "":
         task_name = input("\n\tTask name is required\n\tEnter a task name: ")
+        if task_name.upper() == 'B':
+            return
 
     # Get description from user
     step_num = print_progress_bar(step_list, step_num)
     description = input("\n\tEnter a task description: ")
+    if description.upper() == 'B':
+        return
 
     # Get due date from user
     step_num = print_progress_bar(step_list, step_num)
     due_date = input("\n\tEnter a due date: ")
+    if due_date.upper() == 'B':
+        return
     # TODO: date validation (currently str)
 
     # Get priority from user
     step_num = print_progress_bar(step_list, step_num)
     priority = input("\n\tEnter a priority level: ")
+    if priority.upper() == 'B':
+        return
     # TODO: add validation for specified priorities
 
     # Save input into task_list, display confirmation
@@ -194,6 +208,7 @@ def add_task_quick(task_list):
     # If user input is 'B', go back to manual entry
     if quick_input.upper() == 'B':
         add_task(task_list)
+        return
     # If user entered nothing, retry prompt
     while quick_input == "":
         quick_input = input("\n\t(!) Input required\n\tEnter task information or 'B' to go back: \n")
@@ -437,13 +452,13 @@ def complete_task(task_id, user_list, completed_task_list):
 def get_help():
     """
     Display help menu for app.
+    Requires textwrap module for print formatting.
 
     :param:     none
 
     :return:    none
     """
-    clear_screen()
-    print("> HELP\n"
+    help_text = (
           "\nTO ADD a new task, enter 'A' from the home page, then follow the prompts to enter each field.\n"
           "\tTask name is the only required field\n"
           "\tYou can leave all other fields blank (just press enter)\n"
@@ -461,12 +476,17 @@ def get_help():
           "\nTo VIEW and manage all tasks on your list, enter 'V' from the main menu \nor anywhere else you see the prompt.\n"
 
           "\nTo mark a task as COMPLETE, enter 'C' from the VIEW tasks screen \nand follow the on-screen prompts.\n"
-          "\t\t* Completing a task deletes it forever. It cannot be undone.\n"
+          "\t* Completing a task deletes it forever. It cannot be undone.\n"
 
           "\nTo EDIT a task, enter 'E' from the VIEW tasks screen \nand follow the on-screen prompts.\n"
-          "\t\t* If you want to leave a field as is, just press enter when prompted to edit the field.\n"
+          "\t* If you want to leave a field as is, just press enter when prompted to edit the field.\n"
 
           "\nTo QUIT the app, enter 'Q' from the main menu.\n")
+
+    # Print help menu
+    clear_screen()
+    print("> HELP\n")
+    print(textwrap.indent(help_text.strip(), '    '))
 
     # Exit to main menu prompt
     next_step = input("\n> Enter 'M' to return to the MAIN MENU.\n\n").upper()
