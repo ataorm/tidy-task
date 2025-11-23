@@ -1,20 +1,63 @@
 # Name: Arianne Taormina
 # OSU Email: taormina@oregonstate.edu
 # Course: CS361 - Software Engineering I
-# Assignment 5: Main Program Implementation (Milestone 1)
-# Due Date: Nov 3, 2025
+# Assignment: Portfolio Project with Microservice Implementation
+# Due Date: Nov 23, 2025
 
-# Description:  Modules for Main Program implementation.
+# Description:  Modules for Main Program implementation. #todo: microservice explanation
 
 
 # TODO: Add functionality to recover task from completed.pkl
-#   Update: add status to regular object incomplete/complete
+#   Update: recover completed tasks
 #   Update: 2nd list should be for DELETE + recovery from delete
+# TODO: Add completion date to completed tasks for daily_summary notification service
 # TODO: Add delete functionality (does not get added to completed.pkl)
-# TODO: Choice: (main) use default file, start new, or enter own file name
+# TODO: Choice: (main) use default file, start new, or enter own file name 
+# TODO: Add type hints for clarity
+# TODO: Should this be a list containing dicts instead of vv?
+# TODO: Switch from pickle to JSON
 
 
 import pickle, time, textwrap
+from datetime import datetime
+
+
+class Task:
+    """
+    Represents a Task in the task list, with attributes.
+    """
+    def __init__(self, task_name, description, due_date, priority):
+        self.task_name = task_name
+        self.description = description
+        self.due_date = due_date
+        self.priority = priority
+        self.status = 'incomplete'
+
+    def get_attribute(self, attribute_name):
+        """
+        Returns value of the given attribute.
+        Raises AttributeError if the attribute does not exist.
+        """
+        return getattr(self, attribute_name)
+
+    def set_attribute(self, attribute_name, value):
+        """
+        Sets value of the given attribute to the given value.
+        """
+        setattr(self, attribute_name, value)
+
+    def set_complete(self):
+        """
+        Mark task as complete.
+        """
+        self.status = 'complete'
+
+    def __str__(self):
+        return (f"[ Task name: {self.task_name} | "
+                f"Description: {self.description or 'None'} | "
+                f"Due date: {self.due_date or 'None'} | "
+                f"Priority: {self.priority or 'None'} | "
+                f"Status: {self.status} ]")
 
 
 def print_welcome():
@@ -72,7 +115,7 @@ def get_input(prompt, valid_responses):
     user_response = input(prompt).upper()
 
     # Validate input
-    while user_response not in str(valid_responses):
+    while user_response not in str(valid_responses): # todo: while user_response not in valid_responses: + test
         user_response = input(prompt).upper()
 
     # Return response
@@ -129,6 +172,8 @@ def add_task(task_list):
 
     :return:                none
     """
+    # TODO: SWITCH THIS TO edit_date loop format!
+    # TODO: break out date parse to use in add_task and edit_task
     # Print status bar
     step_num = 0
     step_list = ['Task Title', 'Description', 'Due Date', 'Priority', 'Task Added']
@@ -166,10 +211,17 @@ def add_task(task_list):
 
     # Get due date from user
     step_num = print_progress_bar(step_list, step_num)
-    due_date = input("\n\tEnter a due date: ")
-    if due_date.upper() == 'B':
-        return
-    # TODO: date validation (currently str)
+    while True:
+        due_date = input("\n\tEnter a due date (YYYY-MM-DD): ")
+        if due_date.upper() == 'B':
+            return
+        if due_date.strip() == "":
+            break
+        try:
+            due_date = datetime.strptime(due_date, "%Y-%m-%d").date()
+            break
+        except ValueError:
+            print("\n\t(!) Invalid date format. Please use YYYY-MM-DD.\n")
 
     # Get priority from user
     step_num = print_progress_bar(step_list, step_num)
@@ -213,7 +265,7 @@ def add_task_quick(task_list):
     while quick_input == "":
         quick_input = input("\n\t(!) Input required\n\tEnter task information or 'B' to go back: \n")
 
-    # Parse string
+    # Parse string #todo: add date format validation, store as date object
     try:
         task_name, description, due_date, priority = quick_input.split("//")
     except ValueError:
@@ -248,7 +300,7 @@ def save_new_task(task_list, task_name, description, due_date, priority):
 
     # Save task to dictionary
     new_task = Task(task_name, description, due_date, priority)
-    task_list[new_task_id] = new_task
+    task_list[new_task_id] = new_task #todo: I don't think this is right. This is location not id? make str?
 
     # Save dictionary to file
     save_list(task_list, 'userlist.pkl')
@@ -268,31 +320,17 @@ def save_list(list_object, filename):
         pickle.dump(list_object, outputfile)
 
 
-class Task:
-    """
-    Represents a Task in the task list, with attributes.
-    """
-    def __init__(self, task_name, description, due_date, priority):
-        self.task_name = task_name
-        self.description = description
-        self.due_date = due_date
-        self.priority = priority
-
-    def __repr__(self):
-        return f"[ Task name: {self.task_name} || Description: {self.description} || Due date: {self.due_date} || Priority level: {self.priority} ]"
-
-
-def view_tasks_menu(user_list, completed_task_list):
+def view_tasks_menu(user_list):
     """
     Navigation menu for under task view.
 
     :param user_list:               Dictionary of user tasks.
-    :param completed_task_list:     Dictionary of completed tasks.
+    :param completed_task_list:     Dictionary of completed tasks. #todo: del
 
     :return:                        none
     """
     while True:
-        list_is_populated = view_all_tasks()
+        list_is_populated = view_task_list()
         # If list found empty, return
         if not list_is_populated:
             return
@@ -316,7 +354,7 @@ def view_tasks_menu(user_list, completed_task_list):
 
         # If user enters E, edit task
         elif user_choice == 'E':
-            task_id = int(get_input("\nTo EDIT a task, enter its TaskID: ", user_list))
+            task_id = int(get_input("\nTo EDIT a task, enter its TaskID: ", user_list)) #todo: wrong list passed, fix
             edit_task(task_id, user_list)
             continue
 
@@ -328,43 +366,113 @@ def view_tasks_menu(user_list, completed_task_list):
                                  "\nEnter 'C' to COMPLETE the task or 'B' to go BACK to your list: ").upper()
             # If user confirms, complete task
             if confirmation == 'C':
-                complete_task(task_id, user_list, completed_task_list)
+                complete_task(task_id, user_list)
             continue
 
 
-def view_all_tasks():
+def view_task_list():
     """
-    View all tasks in saved task list.
+    View all incomplete tasks in saved task list.
     Requires pickle module.
 
     :param:     none
 
-    :return:    True if tasks exist, False if file empty
+    :return:    True if incomplete tasks exist, False if file empty or all tasks complete
     """
     clear_screen()
+    no_incomplete = True
     # Print list if exists
     try:
         with open('userlist.pkl', 'rb') as readfile:
             user_list = pickle.load(readfile)
         # Print column headers
-        print('{:<8} {:<20} {:<30} {:<15} {:15}'.format('TaskID', 'Task', 'Description', 'Due Date', 'Priority'))
+        print('{:<8} {:<20} {:<30} {:<15} {:15}'.format(
+            'TaskID', 'Task', 'Description', 'Due Date', 'Priority'
+        ))
         print("-" * (8+20+30+15+15))
-        # Print all tasks
+        # Print incomplete tasks in formatted table
         for task in user_list:
-            print('{:<8} {:<20} {:<30} {:<15} {:15}'.format(task, user_list[task].task_name, user_list[task].description, user_list[task].due_date, user_list[task].priority))
-        # Return true
+            if user_list[task].status == 'incomplete':
+                formatted_date = user_list[task].due_date.strftime('%b %d, %Y') # Format: 'Nov 13, 2025'
+                print('{:<8} {:<20} {:<30} {:<15} {:15}'.format(
+                    task, user_list[task].task_name, user_list[task].description, formatted_date, user_list[task].priority
+                ))
+                no_incomplete = False
+    # Return False if no incomplete tasks or empty list
+        if no_incomplete:
+            print("Your to do list is empty!\n")
+            return False
         return True
-    # Return error if empty list
     except EOFError:
         print("Your to do list is empty!\n")
         return False
+
+
+# def edit_task(task_id, task_list): #todo: del: prev edit_task version before added inside class Task
+#     """
+#     Edit task via manual process (one prompt per 'screen'),
+#     with progress bar displayed on each 'screen'.
+#     Current fields: title (req), description, due date, priority.
+#
+#     :param task_id:         ID of task to edit
+#     :param task_list:       Dictionary of user tasks.
+#
+#     :return:                none
+#     """
+#     step_num = 0
+#     step_list = ['Edit Task Title', 'Edit Description', 'Edit Due Date', 'Edit Priority', 'Edit Completed']
+#
+#     # Get task name from user
+#     step_num = print_progress_bar(step_list, step_num)
+#     task_name = input(f"\t>> Current task name: {task_list[task_id].task_name}\n\n"
+#                       f"\tTo leave task name as is, press enter.\n"
+#                       f"\tTo EDIT task name, enter a new task name: ")
+#
+#     # Get description from user
+#     step_num = print_progress_bar(step_list, step_num)
+#     description = input(f"\t>> Current description: {task_list[task_id].description}\n\n"
+#                         f"\tTo leave description as is, press enter.\n"
+#                         f"\tTo EDIT description, enter a new description: ")
+#
+#     # Get due date from user
+#     step_num = print_progress_bar(step_list, step_num)
+#     due_date = input(f"\t>> Current due date: {task_list[task_id].due_date}\n\n"
+#                       f"\tTo leave due date as is, press enter.\n"
+#                       f"\tTo EDIT due date, enter a new due date: ")
+#     # TODO: add date validation
+#
+#     # Get priority from user
+#     step_num = print_progress_bar(step_list, step_num)
+#     priority = input(f"\t>> Current priority: {task_list[task_id].priority}\n\n"
+#                      f"\tTo leave priority as is, press enter.\n"
+#                      f"\tTo EDIT priority, enter a new priority: ")
+#     # TODO: add priority validation
+#
+#     # Save edited attributes into task_list task
+#     # TODO: better way to write this?
+#     if task_name != '':
+#         task_list[task_id].task_name = task_name
+#     if description != '':
+#         task_list[task_id].description = description
+#     if due_date != '':
+#         task_list[task_id].due_date = due_date
+#     if priority != '':
+#         task_list[task_id].priority = priority
+#
+#     # Save updated dictionary to file
+#     save_list(task_list, 'userlist.pkl')
+#
+#     # Task edited successfully
+#     print_progress_bar(step_list, step_num)
+#     print("\n\t✓ Task edited successfully!\n\n")
+#     time.sleep(1)
 
 
 def edit_task(task_id, task_list):
     """
     Edit task via manual process (one prompt per 'screen'),
     with progress bar displayed on each 'screen'.
-    Current fields: title (req), description, due date, priority.
+    Fields: title (req), description, due date, priority.
 
     :param task_id:         ID of task to edit
     :param task_list:       Dictionary of user tasks.
@@ -373,72 +481,45 @@ def edit_task(task_id, task_list):
     """
     step_num = 0
     step_list = ['Edit Task Title', 'Edit Description', 'Edit Due Date', 'Edit Priority', 'Edit Completed']
+    attributes = ['task_name', 'description', 'due_date', 'priority']
 
-    # Get task name from user
-    step_num = print_progress_bar(step_list, step_num)
-    task_name = input(f"\t>> Current task name: {task_list[task_id].task_name}\n\n"
-                      f"\tTo leave task name as is, press enter.\n"
-                      f"\tTo EDIT task name, enter a new task name: ")
+    for attribute in attributes:
+        step_num = print_progress_bar(step_list, step_num)
+        label = attribute.replace("_", " ")
+        current_value = task_list[task_id].get_attribute(attribute)
+        updated_value = input(
+            f"\t>> Current {label}: {current_value}\n\n"
+            f"\tTo leave {label} as is, press enter.\n"
+            f"\tTo EDIT {label}, enter a new {label}: "
+        )
+        if updated_value:
+            task_list[task_id].set_attribute(attribute, updated_value)
 
-    # Get description from user
-    step_num = print_progress_bar(step_list, step_num)
-    description = input(f"\t>> Current description: {task_list[task_id].description}\n\n"
-                        f"\tTo leave description as is, press enter.\n"
-                        f"\tTo EDIT description, enter a new description: ")
-
-    # Get due date from user
-    step_num = print_progress_bar(step_list, step_num)
-    due_date = input(f"\t>> Current due date: {task_list[task_id].due_date}\n\n"
-                      f"\tTo leave due date as is, press enter.\n"
-                      f"\tTo EDIT due date, enter a new due date: ")
-    # TODO: add date validation
-
-    # Get priority from user
-    step_num = print_progress_bar(step_list, step_num)
-    priority = input(f"\t>> Current priority: {task_list[task_id].priority}\n\n"
-                     f"\tTo leave priority as is, press enter.\n"
-                     f"\tTo EDIT priority, enter a new priority: ")
-    # TODO: add priority validation
-
-    # Save edited attributes into task_list task
-    # TODO: better way to write this?
-    if task_name != '':
-        task_list[task_id].task_name = task_name
-    if description != '':
-        task_list[task_id].description = description
-    if due_date != '':
-        task_list[task_id].due_date = due_date
-    if priority != '':
-        task_list[task_id].priority = priority
+    # # TODO: make date entry into date object
+    # # TODO: add date validation
+    # # TODO: add priority validation
 
     # Save updated dictionary to file
     save_list(task_list, 'userlist.pkl')
 
-    # Task edited successfully
+    # Confirm success
     print_progress_bar(step_list, step_num)
     print("\n\t✓ Task edited successfully!\n\n")
     time.sleep(1)
 
 
-def complete_task(task_id, user_list, completed_task_list):
+def complete_task(task_id, user_list):
     """
-    Removes task from task list.
-    # TODO: this could become move_list and could move completed tasks back to main list too
+    Marks task on task list as complete.
 
     :param task_id:                 ID of task to complete.
     :param user_list:               Dictionary of user tasks.
-    :param completed_task_list:     Dictionary of completed user tasks.
 
     :return:                        none
     """
-    # Move completed task to completed_task_list
-    completed_task_list[task_id] = user_list[task_id]
-
-    # Save completed_task_list
-    save_list(completed_task_list, 'completed.pkl')
-
-    # Delete task from user_list
-    user_list.pop(task_id)
+    # Mark completed task as complete
+    # user_list[task_id].status = 'complete' # todo: del
+    user_list[task_id].set_complete()
 
     # Save user_list
     save_list(user_list, 'userlist.pkl')
@@ -447,6 +528,35 @@ def complete_task(task_id, user_list, completed_task_list):
     clear_screen()
     print("\n\t✓ Task successfully marked completed!\n\n")
     time.sleep(1)
+
+
+# def delete_task(task_id, user_list, completed_task_list): # todo: modify this to become delete (+ later recovery)
+#     """
+#     Removes task from task list.
+#     # TODO: this could become move_list and could move completed/deleted tasks back to main list too
+#
+#     :param task_id:                 ID of task to complete.
+#     :param user_list:               Dictionary of user tasks.
+#     :param completed_task_list:     Dictionary of completed user tasks.
+#
+#     :return:                        none
+#     """
+#     # Move completed task to completed_task_list
+#     completed_task_list[task_id] = user_list[task_id]
+#
+#     # Save completed_task_list
+#     save_list(completed_task_list, 'completed.pkl')
+#
+#     # Delete task from user_list
+#     user_list.pop(task_id)
+#
+#     # Save user_list
+#     save_list(user_list, 'userlist.pkl')
+#
+#     # Confirm completed
+#     clear_screen()
+#     print("\n\t✓ Task successfully marked completed!\n\n")
+#     time.sleep(1)
 
 
 def get_help():
