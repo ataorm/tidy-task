@@ -208,7 +208,7 @@ def view_task_list(sublist=None, title=' '):
         else:
             user_list = sublist
 
-        col_widths = [8, 20, 30, 15, 15]
+        col_widths = [8, 25, 30, 15, 15]
         table_headers = ['TaskID', 'Task', 'Description', 'Due Date', 'Priority']
         print_table_row(table_headers, col_widths, title)
 
@@ -452,6 +452,7 @@ def add_task_quick(task_list):
             clear_screen()
             print("\n\t✓ Task added successfully!\n\n")
             time.sleep(1)
+            clear_screen()
             return
 
 
@@ -961,6 +962,9 @@ def get_filter_list():
             value = [value1, value2]
         else:
             value = input("\nEnter value to filter by: ")
+            if field_name == 'priority' and str(value).lower() in ('high', 'medium', 'low'):
+                priority_map = {"high": "1", "medium": "2", "low": "3"}
+                value = priority_map[str(value).lower()]
 
         filters.append({
             "field_name": field_name,
