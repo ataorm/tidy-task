@@ -190,6 +190,20 @@ def clear_screen():
     print('\n' * 100)
 
 
+def pause_before_return(messages=None):
+    """
+    Await user input to return to task list.
+
+    :param messages:    Messages to print
+    """
+    print()
+    if messages:
+        for msg in messages:
+            print(msg)
+    input("\nPress ENTER to return to the task list...")
+    clear_screen()
+
+
 def view_task_list(sublist=None, title=' '):
     """
     View incomplete tasks in saved task list or temporary sublist.
@@ -762,20 +776,6 @@ def get_overdue_tasks(user_list):
             overdue_tasks.append(notification["message"])
         return overdue_tasks
     return ["Error returning overdue tasks."]
-
-
-def pause_before_return(messages=None):
-    """
-    Await user input to return to task list.
-
-    :param messages:    Messages to print
-    """
-    print()
-    if messages:
-        for msg in messages:
-            print(msg)
-    input("\nPress ENTER to return to the task list...")
-    clear_screen()
 
 
 def get_completion_rate(user_list):
